@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WC2026 Predictions Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f0f;--card:#1a1a1a;--card2:#222;--border:#2a2a2a;--border2:#333;
+  --text:#f0f0f0;--muted:#888;--faint:#444;
+  --green:#22c55e;--green-bg:#052510;--green-border:#0d4a20;
+  --blue:#3b82f6;--blue-bg:#051530;--blue-border:#0d2d5e;
+  --amber:#f59e0b;--amber-bg:#1a1000;--amber-border:#3d2600;
+  --red:#ef4444;--red-bg:#1a0505;--red-border:#3d0d0d;
+  --purple:#a855f7;
+  --radius:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+
+header{background:#111;border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;flex-wrap:wrap}
+.logo{font-size:22px;font-weight:900;letter-spacing:-1px;color:#fff;white-space:nowrap}
+.logo span{color:var(--green)}
+.hright{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn{background:var(--green);color:#000;font-weight:700;font-size:12px;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;white-space:nowrap;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn.ghost{background:transparent;border:1px solid var(--border2);color:var(--muted)}
+.btn.ghost:hover{border-color:var(--green);color:var(--green)}
+.status-pill{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);background:var(--card);border:1px solid var(--border);padding:4px 10px;border-radius:20px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--faint);flex-shrink:0;transition:all .3s}
+.dot.live{background:var(--green);box-shadow:0 0 6px var(--green)}
+.dot.err{background:var(--red)}
+
+main{max-width:1120px;margin:0 auto;padding:20px 16px}
+.sec{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sec::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;text-align:center}
+.kpi .v{font-size:26px;font-weight:900;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .l{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
+.g{color:var(--green)}.b{color:var(--blue)}.a{color:var(--amber)}.r{color:var(--red)}.p{color:var(--purple)}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:760px){.two,.three{grid-template-columns:1fr}}
+
+/* leaderboard */
+.lb{display:flex;flex-direction:column;gap:3px}
+.lbr{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:default;transition:background .1s}
+.lbr:hover{background:var(--card2)}
+.rnk{font-size:13px;font-weight:700;width:26px;text-align:center;flex-shrink:0;color:var(--muted)}
+.rnk.top{color:var(--amber)}
+.av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;letter-spacing:-.5px}
+.pname{flex:1;font-weight:600;font-size:13px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pdet{font-size:10px;color:var(--muted);display:flex;gap:5px;margin-top:1px;flex-wrap:wrap}
+.barw{width:80px;height:4px;background:var(--border2);border-radius:2px;overflow:hidden;flex-shrink:0}
+.barf{height:100%;background:var(--green);border-radius:2px}
+.ptot{font-size:18px;font-weight:900;color:var(--green);flex-shrink:0;min-width:32px;text-align:right}
+
+/* match table */
+.tbl{width:100%;border-collapse:collapse;font-size:11px}
+.tbl th{color:var(--muted);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 7px;border-bottom:1px solid var(--border);text-align:center;white-space:nowrap}
+.tbl th:first-child{text-align:left}
+.tbl td{padding:7px 7px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
+.tbl td:first-child{text-align:left;font-weight:600;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#111}
+.pos{color:var(--green);font-weight:700}
+.neg{color:var(--red);font-weight:700}
+.zer{color:var(--muted)}
+.na{color:var(--faint)}
+.tot{color:var(--green);font-weight:900;font-size:13px}
+
+/* tabs */
+.tabbar{display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid var(--border)}
+.tab{padding:7px 14px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;white-space:nowrap}
+.tab.on{color:var(--green);border-bottom-color:var(--green)}
+.tab:hover{color:var(--text)}
+.tp{display:none}.tp.on{display:block}
+
+/* h2h + radar */
+select{background:var(--card2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;outline:none;cursor:pointer;max-width:100%}
+select:focus{border-color:var(--green)}
+.sel-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.hstat{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:7px;background:var(--card2);margin-bottom:5px}
+.hstat .hl{flex:1;color:var(--muted);font-size:11px}
+.hstat .hv{font-weight:700;font-size:13px}
+
+/* fun */
+.fun-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:4px}
+.fun-icon{font-size:22px}
+.fun-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.fun-val{font-size:14px;font-weight:700}
+.fun-sub{font-size:11px;color:var(--muted)}
+
+/* chart */
+.cw{position:relative;width:100%}
+
+/* loading */
+#loading{position:fixed;inset:0;background:#0f0f0f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:200}
+.spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading p{color:var(--muted);font-size:13px}
+
+/* error banner */
+#err-banner{display:none;background:var(--red-bg);border:1px solid var(--red-border);color:var(--red);padding:10px 16px;border-radius:8px;font-size:12px;margin-bottom:16px}
+
+.refresh-note{font-size:10px;color:var(--faint)}
+.round-chip{display:inline-block;font-size:9px;padding:1px 5px;border-radius:4px;background:var(--card2);color:var(--muted);border:1px solid var(--border2);margin-right:3px;vertical-align:middle}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div style="font-size:36px">⚽</div>
+  <div class="spinner"></div>
+  <p id="load-msg">Loading your sheet…</p>
+</div>
+
+<header>
+  <div>
+    <div class="logo">WC<span>2026</span> <span style="font-size:13px;font-weight:400;color:var(--muted)">Predictions</span></div>
+  </div>
+  <div class="hright">
+    <span class="refresh-note" id="refresh-note"></span>
+    <button class="btn ghost" onclick="fetchSheet()">↻ Refresh</button>
+    <div class="status-pill"><div class="dot" id="sdot"></div><span id="stxt">Loading…</span></div>
+  </div>
+</header>
+
+<main>
+  <div id="err-banner"></div>
+
+  <!-- KPIs -->
+  <div class="kpi-row" id="kpis"></div>
+
+  <!-- Leaderboard + Charts -->
+  <div class="two">
+    <div class="card" style="padding:14px">
+      <div class="sec" style="margin-bottom:12px">Rankings</div>
+      <div class="lb" id="lb"></div>
+    </div>
+    <div class="card" style="padding:14px">
+      <div class="tabbar">
+        <div class="tab on" onclick="showTab('prog',this)">Progression</div>
+        <div class="tab" onclick="showTab('acc',this)">Accuracy</div>
+        <div class="tab" onclick="showTab('share',this)">Share</div>
+      </div>
+      <div class="tp on" id="tp-prog"><div class="cw" style="height:260px"><canvas id="cProg" role="img" aria-label="Points progression over all matches">Points progression line chart</canvas></div></div>
+      <div class="tp" id="tp-acc"><div class="cw" style="height:260px"><canvas id="cAcc" role="img" aria-label="Correct vs wrong per player">Accuracy bar chart</canvas></div></div>
+      <div class="tp" id="tp-share"><div class="cw" style="height:260px"><canvas id="cShare" role="img" aria-label="Points share among players">Points share donut</canvas></div></div>
+    </div>
+  </div>
+
+  <!-- Match table -->
+  <div class="card" style="margin-bottom:20px;padding:14px">
+    <div class="sec" style="margin-bottom:10px">Match-by-match scores</div>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <table class="tbl" id="mtbl"><thead id="mth"></thead><tbody id="mtb"></tbody></table>
+    </div>
+  </div>
+
+  <!-- Radar + H2H -->
+  <div class="two">
+    <div class="card" style="padding:14px">
+      <div class="sec" style="margin-bottom:10px">Performance radar</div>
+      <div class="sel-row"><select id="rSel" onchange="drawRadar()"><option value="">— select player —</option></select></div>
+      <div class="cw" style="height:210px"><canvas id="cRadar" role="img" aria-label="Player performance radar">Radar</canvas></div>
+      <div id="rStats" style="margin-top:10px"></div>
+    </div>
+    <div class="card" style="padding:14px">
+      <div class="sec" style="margin-bottom:10px">Head-to-head</div>
+      <div class="sel-row">
+        <select id="hA" onchange="drawH2H()"><option value="">— Player A —</option></select>
+        <select id="hB" onchange="drawH2H()"><option value="">— Player B —</option></select>
+      </div>
+      <div class="cw" style="height:180px"><canvas id="cH2H" role="img" aria-label="Head to head per match">H2H chart</canvas></div>
+      <div id="h2hStats" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- Fun stats -->
+  <div class="sec">Fun stats &amp; records</div>
+  <div class="three" id="fun"></div>
+
+</main>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTuWq9-pk8ae1hMuMWOsggR8Sbf4r1cEQF7Gw_-lo3v_QSSlncmacw4hwQqTKalHT64oYiWwv1ctcw0/pub?gid=0&single=true&output=csv";
+const REFRESH_MS = 5 * 60 * 1000; // 5 minutes
+
+// ── PALETTE ───────────────────────────────────────────────────────────────────
+const SERIES  = ['#2a78d6','#1baf7a','#eda100','#4a3aa7','#e34948','#e87ba4','#eb6834','#14b8a6','#a855f7','#22c55e'];
+const AV_BG   = ['#052510','#051530','#1a1000','#150a1f','#1a0505','#0a0a20','#1a0a05','#051515','#100515','#051510'];
+const AV_FG   = ['#22c55e','#3b82f6','#f59e0b','#a855f7','#ef4444','#60a5fa','#f97316','#14b8a6','#c084fc','#4ade80'];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let S = { players:[], matches:[] };
+let C = {};
+let timer = null;
+
+// ── FETCH & PARSE ─────────────────────────────────────────────────────────────
+function fetchSheet() {
+  const url = SHEET_URL + '&_=' + Date.now();
+  setStatus('', 'Refreshing…');
+  fetch(url)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+    .then(csv => {
+      parseCSV(csv);
+      render();
+      setStatus('live', 'Live · updates every 5 min');
+      document.getElementById('refresh-note').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+      document.getElementById('loading').style.display = 'none';
+      hideErr();
+    })
+    .catch(e => {
+      document.getElementById('loading').style.display = 'none';
+      showErr('Could not load sheet: ' + e.message + '. Make sure it is published as CSV and the link is correct.');
+      setStatus('err', 'Error');
+    });
+}
+
+function parseCSV(csv) {
+  const lines = csv.trim().split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return;
+  const headers = splitCSV(lines[0]);
+
+  // Col 0 = Name, Col 1 = Group Stage Mark (or initial pts)
+  // Col 2+ = match columns (some may be blank headers — auto-name them)
+  const matchCols = headers.slice(2).map((h, i) => {
+    const label = h.trim();
+    return {
+      idx: i + 2,
+      // If header is blank or just spaces, name it by position
+      label: label || ('Match ' + (i + 1)),
+      // Detect round from label for display grouping
+      round: detectRound(label || '')
+    };
+  });
+
+  S.matches = matchCols;
+  S.players = [];
+
+  for (let r = 1; r < lines.length; r++) {
+    const row = splitCSV(lines[r]);
+    const name = (row[0] || '').trim();
+    if (!name) continue;
+
+    const initial = parseFloat((row[1] || '').replace(/[^0-9.\-]/g,'')) || 0;
+    const matchPts = matchCols.map(m => {
+      const raw = (row[m.idx] || '').trim();
+      if (raw === '' || raw === '-' || raw === '–') return null;
+      const n = parseFloat(raw);
+      return isNaN(n) ? null : n;
+    });
+
+    const earned   = matchPts.reduce((s, v) => s + (v !== null ? v : 0), 0);
+    const played   = matchPts.filter(v => v !== null).length;
+    const correct  = matchPts.filter(v => v !== null && v > 0).length;
+    const wrong    = matchPts.filter(v => v !== null && v < 0).length;
+    const zero     = matchPts.filter(v => v === 0).length;
+
+    S.players.push({ name, initial, matchPts, earned, total: initial + earned, played, correct, wrong, zero });
+  }
+
+  S.players.sort((a, b) => b.total - a.total);
+}
+
+function detectRound(label) {
+  const l = label.toLowerCase();
+  if (l.includes('final') && !l.includes('semi') && !l.includes('quarter')) return 'F';
+  if (l.includes('semi')) return 'SF';
+  if (l.includes('quarter') || l.includes('qf')) return 'QF';
+  if (l.includes('r16') || l.includes('r-16') || l.includes('round of 16')) return 'R16';
+  if (l.includes('r32') || l.includes('r-32') || l.includes('round of 32')) return 'R32';
+  return '';
+}
+
+function splitCSV(line) {
+  const res = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { res.push(cur.trim()); cur = ''; }
+    else cur += c;
+  }
+  res.push(cur.trim());
+  return res;
+}
+
+function setStatus(state, txt) {
+  const d = document.getElementById('sdot');
+  d.className = 'dot' + (state === 'live' ? ' live' : state === 'err' ? ' err' : '');
+  document.getElementById('stxt').textContent = txt;
+}
+function showErr(msg) { const e = document.getElementById('err-banner'); e.textContent = '⚠ ' + msg; e.style.display = 'block'; }
+function hideErr() { document.getElementById('err-banner').style.display = 'none'; }
+
+// ── RENDER ALL ────────────────────────────────────────────────────────────────
+function render() {
+  renderKPIs();
+  renderLB();
+  renderMatchTable();
+  populateSelects();
+  drawProg();
+  drawAcc();
+  drawShare();
+  drawRadar();
+  drawH2H();
+  renderFun();
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+function renderKPIs() {
+  const p = S.players, n = p.length;
+  if (!n) return;
+  const played   = S.matches.filter((_, i) => p.some(pl => pl.matchPts[i] !== null)).length;
+  const allPts   = p.flatMap(pl => pl.matchPts.filter(v => v !== null));
+  const avg      = allPts.length ? (allPts.reduce((a,b)=>a+b,0)/allPts.length).toFixed(1) : '–';
+  const gap      = p[0].total - p[n-1].total;
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi"><div class="v g">${p[0].total}</div><div class="l">Leader pts</div></div>
+    <div class="kpi"><div class="v a" style="font-size:18px">${p[0].name.split(' ')[0]}</div><div class="l">Current leader</div></div>
+    <div class="kpi"><div class="v b">${played}/${S.matches.length}</div><div class="l">Matches scored</div></div>
+    <div class="kpi"><div class="v p">${avg}</div><div class="l">Avg pts/match</div></div>
+    <div class="kpi"><div class="v r">${gap}</div><div class="l">1st–last gap</div></div>
+  `;
+}
+
+// ── LEADERBOARD ───────────────────────────────────────────────────────────────
+function renderLB() {
+  const max = S.players[0]?.total || 1;
+  document.getElementById('lb').innerHTML = S.players.map((p, i) => {
+    const medal   = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    const initials = p.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const pct     = Math.max(0, Math.round(p.total / max * 100));
+    return `<div class="lbr">
+      <div class="rnk ${i<3?'top':''}">${medal || ('#'+(i+1))}</div>
+      <div class="av" style="background:${AV_BG[i%10]};color:${AV_FG[i%10]}">${initials}</div>
+      <div style="flex:1;min-width:0">
+        <div class="pname">${p.name}</div>
+        <div class="pdet">
+          <span>✅ ${p.correct}</span><span>❌ ${p.wrong}</span><span>➖ ${p.zero}</span>
+          ${p.initial ? `<span style="color:var(--amber)">+${p.initial} start</span>` : ''}
+        </div>
+        <div style="margin-top:5px"><div class="barw"><div class="barf" style="width:${pct}%"></div></div></div>
+      </div>
+      <div class="ptot">${p.total}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── MATCH TABLE ───────────────────────────────────────────────────────────────
+function renderMatchTable() {
+  if (!S.matches.length) return;
+  // Build header — group by round if detectable
+  const thCells = S.matches.map(m => {
+    const chip = m.round ? `<span class="round-chip">${m.round}</span>` : '';
+    return `<th>${chip}${m.label}</th>`;
+  }).join('');
+  document.getElementById('mth').innerHTML = `<tr><th>Player</th>${thCells}<th>Total</th></tr>`;
+
+  document.getElementById('mtb').innerHTML = S.players.map(p => {
+    const cells = p.matchPts.map(v => {
+      if (v === null) return `<td class="na">–</td>`;
+      if (v > 0)  return `<td class="pos">+${v}</td>`;
+      if (v < 0)  return `<td class="neg">${v}</td>`;
+      return `<td class="zer">0</td>`;
+    }).join('');
+    return `<tr><td>${p.name}</td>${cells}<td class="tot">${p.total}</td></tr>`;
+  }).join('');
+}
+
+// ── SELECTS ───────────────────────────────────────────────────────────────────
+function populateSelects() {
+  const opts = S.players.map((p,i) => `<option value="${i}">${p.name}</option>`).join('');
+  ['rSel','hA','hB'].forEach((id, n) => {
+    const blank = n===0 ? '— select player —' : n===1 ? '— Player A —' : '— Player B —';
+    document.getElementById(id).innerHTML = `<option value="">— ${blank} —</option>` + opts;
+  });
+}
+
+// ── CHARTS ────────────────────────────────────────────────────────────────────
+const GR = '#2a2a2a', TC = '#666';
+function kill(k) { if (C[k]) { C[k].destroy(); delete C[k]; } }
+function baseOpts() {
+  return { responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{backgroundColor:'#1a1a1a',borderColor:'#333',borderWidth:1,titleColor:'#f0f0f0',bodyColor:'#aaa',padding:10} },
+    scales:{ x:{grid:{color:GR},ticks:{color:TC,font:{size:10},maxRotation:40},border:{color:GR}},
+              y:{grid:{color:GR},ticks:{color:TC,font:{size:10}},border:{color:GR}} } };
+}
+
+function drawProg() {
+  kill('prog');
+  if (!S.players.length || !S.matches.length) return;
+  const labels   = S.matches.map(m => m.label);
+  const datasets = S.players.map((p, i) => {
+    let cum = p.initial;
+    const data = p.matchPts.map(v => { cum += (v !== null ? v : 0); return cum; });
+    return { label:p.name, data, borderColor:SERIES[i%10], backgroundColor:'transparent', borderWidth:2, pointRadius:3, pointBackgroundColor:SERIES[i%10], tension:.35 };
+  });
+  C.prog = new Chart(document.getElementById('cProg').getContext('2d'),
+    { type:'line', data:{labels,datasets}, options:baseOpts() });
+}
+
+function drawAcc() {
+  kill('acc');
+  if (!S.players.length) return;
+  const opts = baseOpts();
+  C.acc = new Chart(document.getElementById('cAcc').getContext('2d'), {
+    type:'bar',
+    data:{ labels:S.players.map(p=>p.name), datasets:[
+      { label:'Correct', data:S.players.map(p=>p.correct), backgroundColor:S.players.map((_,i)=>SERIES[i%10]+'cc'), borderRadius:3 },
+      { label:'Wrong',   data:S.players.map(p=>p.wrong),   backgroundColor:'#444', borderRadius:3 },
+    ]},
+    options:opts
+  });
+}
+
+function drawShare() {
+  kill('share');
+  if (!S.players.length) return;
+  const vals  = S.players.map(p => Math.max(0, p.total));
+  const total = vals.reduce((a,b)=>a+b,0) || 1;
+  C.share = new Chart(document.getElementById('cShare').getContext('2d'), {
+    type:'doughnut',
+    data:{ labels:S.players.map(p=>p.name),
+           datasets:[{ data:vals, backgroundColor:S.players.map((_,i)=>SERIES[i%10]), borderColor:'#1a1a1a', borderWidth:3, hoverOffset:6 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:true, position:'bottom', labels:{color:'#888',font:{size:10},boxWidth:10,padding:8} },
+        tooltip:{ backgroundColor:'#1a1a1a', borderColor:'#333', borderWidth:1, titleColor:'#f0f0f0', bodyColor:'#aaa',
+          callbacks:{ label: c => ` ${c.label}: ${c.parsed}pts (${Math.round(c.parsed/total*100)}%)` } } } }
+  });
+}
+
+function showTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.tp').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('tp-'+name).classList.add('on');
+  if (name==='prog') drawProg();
+  if (name==='acc')  drawAcc();
+  if (name==='share') drawShare();
+}
+
+function drawRadar() {
+  kill('radar');
+  const sel = document.getElementById('rSel').value;
+  if (sel === '') return;
+  const p   = S.players[+sel];
+  const max = S.players[0].total || 1;
+  const totalScored = S.matches.filter((_,i)=>S.players.some(pl=>pl.matchPts[i]!==null)).length || 1;
+  const data = [
+    Math.round(p.total / max * 100),
+    p.played ? Math.round(p.correct / p.played * 100) : 0,
+    Math.round(p.played / (S.matches.length||1) * 100),
+    p.played ? Math.round((p.played - p.wrong) / p.played * 100) : 100,
+    p.initial > 0 ? Math.min(100, 50 + Math.round(p.initial/max*50)) : 40,
+  ];
+  const color = SERIES[+sel%10];
+  C.radar = new Chart(document.getElementById('cRadar').getContext('2d'), {
+    type:'radar',
+    data:{ labels:['Points','Hit rate','Participation','Consistency','Head start'],
+           datasets:[{ label:p.name, data, borderColor:color, backgroundColor:color+'33', borderWidth:2, pointBackgroundColor:color, pointRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ r:{ min:0, max:100, ticks:{display:false}, grid:{color:GR}, angleLines:{color:GR}, pointLabels:{color:TC,font:{size:10}} } } }
+  });
+  document.getElementById('rStats').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+      ${[['Total pts',p.total],['Earned in matches',p.earned],['Group stage pts',p.initial],
+         ['Correct ✅',p.correct],['Wrong ❌',p.wrong],['Matches voted',p.played]].map(([l,v])=>
+        `<div class="hstat"><span class="hl">${l}</span><span class="hv">${v}</span></div>`).join('')}
+    </div>`;
+}
+
+function drawH2H() {
+  kill('h2h');
+  const ai = document.getElementById('hA').value, bi = document.getElementById('hB').value;
+  if (ai===''||bi==='') return;
+  const a = S.players[+ai], b = S.players[+bi];
+  const labels = S.matches.map(m=>m.label);
+  C.h2h = new Chart(document.getElementById('cH2H').getContext('2d'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:a.name, data:a.matchPts.map(v=>v??0), backgroundColor:SERIES[+ai%10]+'bb', borderRadius:3 },
+      { label:b.name, data:b.matchPts.map(v=>v??0), backgroundColor:SERIES[+bi%10]+'bb', borderRadius:3 },
+    ]},
+    options:baseOpts()
+  });
+  let aW=0, bW=0, tie=0;
+  S.matches.forEach((_,i)=>{
+    const av=a.matchPts[i], bv=b.matchPts[i];
+    if(av===null||bv===null) return;
+    if(av>bv) aW++; else if(bv>av) bW++; else tie++;
+  });
+  const leader = a.total >= b.total ? a : b;
+  document.getElementById('h2hStats').innerHTML = [
+    [a.name+' total', a.total],
+    [b.name+' total', b.total],
+    ['Match wins – '+a.name.split(' ')[0], aW],
+    ['Match wins – '+b.name.split(' ')[0], bW],
+    ['Tied matches', tie],
+    ['Points lead', Math.abs(a.total-b.total)+' ('+leader.name.split(' ')[0]+')'],
+  ].map(([l,v])=>`<div class="hstat"><span class="hl">${l}</span><span class="hv">${v}</span></div>`).join('');
+}
+
+// ── FUN STATS ─────────────────────────────────────────────────────────────────
+function renderFun() {
+  const p = S.players;
+  if (!p.length) return;
+
+  let bestPts=-Infinity,bestName='',bestMatch='';
+  let worstPts=Infinity,worstName='',worstMatch='';
+  let longestLen=0,longestName='';
+
+  p.forEach(pl => {
+    pl.matchPts.forEach((v,i)=>{
+      if(v===null) return;
+      if(v>bestPts)  { bestPts=v;  bestName=pl.name; bestMatch=S.matches[i]?.label||('M'+(i+1)); }
+      if(v<worstPts) { worstPts=v; worstName=pl.name; worstMatch=S.matches[i]?.label||('M'+(i+1)); }
+    });
+    let streak=0,maxS=0;
+    pl.matchPts.forEach(v=>{ if(v!==null&&v>0){streak++;maxS=Math.max(maxS,streak);}else streak=0; });
+    if(maxS>longestLen){longestLen=maxS;longestName=pl.name;}
+  });
+
+  const topEarner  = [...p].sort((a,b)=>b.earned-a.earned)[0];
+  const mostRight  = [...p].sort((a,b)=>b.correct-a.correct)[0];
+  const mostWrong  = [...p].sort((a,b)=>b.wrong-a.wrong)[0];
+  const mostActive = [...p].sort((a,b)=>b.played-a.played)[0];
+
+  const cards = [
+    {icon:'🏆', lbl:'Overall leader',       val:p[0].name,        sub:p[0].total+'pts total'},
+    bestName   ?{icon:'⚡', lbl:'Best single match',   val:bestName,         sub:`+${bestPts}pts — ${bestMatch}`}:null,
+    mostRight  ?{icon:'🎯', lbl:'Most correct',        val:mostRight.name,   sub:mostRight.correct+' correct predictions'}:null,
+    topEarner  ?{icon:'📈', lbl:'Best earner (match)', val:topEarner.name,   sub:topEarner.earned+'pts earned in matches'}:null,
+    longestName?{icon:'🔥', lbl:'Longest win streak',  val:longestName,      sub:longestLen+' correct in a row'}:null,
+    mostWrong  ?{icon:'😬', lbl:'Most wrong',          val:mostWrong.name,   sub:mostWrong.wrong+' wrong predictions'}:null,
+    mostActive ?{icon:'🗳️',  lbl:'Most active voter',  val:mostActive.name,  sub:mostActive.played+' matches voted'}:null,
+    worstName  ?{icon:'💀', lbl:'Worst single match',  val:worstName,        sub:`${worstPts}pts — ${worstMatch}`}:null,
+    p.length>1 ?{icon:'⚔️',  lbl:'Closest rivals',     val:`${p[p.length-2].name} vs ${p[p.length-1].name}`, sub:`${Math.abs(p[p.length-2].total-p[p.length-1].total)}pt gap`}:null,
+  ].filter(Boolean);
+
+  document.getElementById('fun').innerHTML = cards.map(c=>`
+    <div class="fun-card">
+      <div class="fun-icon">${c.icon}</div>
+      <div class="fun-lbl">${c.lbl}</div>
+      <div class="fun-val">${c.val}</div>
+      <div class="fun-sub">${c.sub}</div>
+    </div>`).join('');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.getElementById('load-msg').textContent = 'Loading scores from Google Sheet…';
+fetchSheet();
+if (timer) clearInterval(timer);
+timer = setInterval(fetchSheet, REFRESH_MS);
+</script>
+</body>
+</html>
