@@ -406,7 +406,7 @@ function renderLB() {
         <div class="pname">${p.name}</div>
         <div class="pdet">
           <span>✅ ${p.correct}</span><span>❌ ${p.wrong}</span><span>➖ ${p.zero}</span>
-          ${p.initial ? `<span style="color:var(--amber)">+${p.initial} start</span>` : ''}
+          ${p.initial ? `<span style="color:var(--amber)">+${p.initial} group-stage</span>` : ''}
         </div>
         <div style="margin-top:5px"><div class="barw"><div class="barf" style="width:${pct}%"></div></div></div>
       </div>
@@ -595,7 +595,7 @@ function renderFun() {
   const mostWrong  = [...p].sort((a,b)=>b.wrong-a.wrong)[0];
   const mostActive = [...p].sort((a,b)=>b.played-a.played)[0];
 
-  const cards = [
+  /*const cards = [
     {icon:'🏆', lbl:'Overall leader',       val:p[0].name,        sub:p[0].total+'pts total'},
     bestName   ?{icon:'⚡', lbl:'Best single match',   val:bestName,         sub:`+${bestPts}pts — ${bestMatch}`}:null,
     mostRight  ?{icon:'🎯', lbl:'Most correct',        val:mostRight.name,   sub:mostRight.correct+' correct predictions'}:null,
@@ -604,6 +604,12 @@ function renderFun() {
     mostWrong  ?{icon:'😬', lbl:'Most wrong',          val:mostWrong.name,   sub:mostWrong.wrong+' wrong predictions'}:null,
     mostActive ?{icon:'🗳️',  lbl:'Most active voter',  val:mostActive.name,  sub:mostActive.played+' matches voted'}:null,
     worstName  ?{icon:'💀', lbl:'Worst single match',  val:worstName,        sub:`${worstPts}pts — ${worstMatch}`}:null,
+    p.length>1 ?{icon:'⚔️',  lbl:'Closest rivals',     val:`${p[p.length-2].name} vs ${p[p.length-1].name}`, sub:`${Math.abs(p[p.length-2].total-p[p.length-1].total)}pt gap`}:null,
+  ].filter(Boolean);*/
+
+  const cards = [
+    mostRight  ?{icon:'🎯', lbl:'Most correct',        val:mostRight.name,   sub:mostRight.correct+' correct predictions'}:null,
+    mostWrong  ?{icon:'😬', lbl:'Most wrong',          val:mostWrong.name,   sub:mostWrong.wrong+' wrong predictions'}:null,
     p.length>1 ?{icon:'⚔️',  lbl:'Closest rivals',     val:`${p[p.length-2].name} vs ${p[p.length-1].name}`, sub:`${Math.abs(p[p.length-2].total-p[p.length-1].total)}pt gap`}:null,
   ].filter(Boolean);
 
