@@ -78,8 +78,9 @@ main{max-width:1180px;margin:0 auto;padding:20px 16px}
 
 /* ── GRID ────────────────────────────────────────────────────── */
 .two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.two-24{display:grid;grid-template-columns:2fr 4fr;gap:16px;margin-bottom:20px}
 .three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-@media(max-width:800px){.two{grid-template-columns:1fr}}
+@media(max-width:800px){.two{grid-template-columns:1fr}.two-24{grid-template-columns:1fr}}
 @media(max-width:600px){.three{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:400px){.three,.kpi-row{grid-template-columns:repeat(2,1fr)}}
 
@@ -97,7 +98,7 @@ main{max-width:1180px;margin:0 auto;padding:20px 16px}
 .fd{width:9px;height:9px;border-radius:2px;flex-shrink:0}
 .fd.pos{background:var(--green)}
 .fd.neg{background:var(--red)}
-.fd.zer{background:#2a3050}
+.fd.zer{background:#4a5580}
 .fd.null{background:var(--faint)}
 .barw{height:3px;background:var(--border2);border-radius:2px;overflow:hidden;margin-top:5px}
 .barf{height:100%;background:linear-gradient(90deg,var(--wc-blue),var(--green));border-radius:2px;transition:width .4s ease}
@@ -196,14 +197,21 @@ select:focus{border-color:var(--wc-gold)}
 /* ── CHART ────────────────────────────────────────────────────── */
 .cw{position:relative;width:100%}
 
-/* ── FORM TABLE ──────────────────────────────────────────────── */
-.form-tbl{width:100%;border-collapse:collapse;font-size:11px}
-.form-tbl th{color:var(--muted);font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:6px 8px;border-bottom:1px solid var(--border);text-align:center;white-space:nowrap}
-.form-tbl th:first-child{text-align:left}
-.form-tbl td{padding:5px 8px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
-.form-tbl td:first-child{text-align:left;font-weight:600;white-space:nowrap}
+/* ── FORM TABLE (FROZEN HEADER + NAME COL) ──────────────────── */
+.form-wrap{overflow:auto;max-height:300px;border-radius:9px;border:1px solid var(--border);scrollbar-width:thin;scrollbar-color:var(--border2) transparent;-webkit-overflow-scrolling:touch}
+.form-wrap::-webkit-scrollbar{width:5px;height:5px}
+.form-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.form-tbl{width:100%;border-collapse:collapse;font-size:11px;min-width:300px}
+.form-tbl th{color:var(--muted);font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:6px 8px;border-bottom:2px solid var(--border2);text-align:center;white-space:nowrap;background:var(--card);position:sticky;top:0;z-index:4}
+.form-tbl th:first-child{text-align:left;position:sticky;left:0;top:0;z-index:6;background:var(--card);border-right:2px solid var(--border2);min-width:90px}
+.form-tbl th.form-sum{position:sticky;right:80px;z-index:5;background:var(--card);border-left:1px solid var(--border2)}
+.form-tbl th.form-trend{position:sticky;right:0;z-index:5;background:var(--card);border-left:2px solid var(--border2);min-width:70px}
+.form-tbl td{padding:5px 8px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle;background:var(--card)}
+.form-tbl td:first-child{text-align:left;font-weight:600;white-space:nowrap;position:sticky;left:0;z-index:2;background:var(--card);border-right:2px solid var(--border2)}
+.form-tbl td.form-sum{position:sticky;right:80px;z-index:2;background:var(--card);border-left:1px solid var(--border2)}
+.form-tbl td.form-trend{position:sticky;right:0;z-index:2;background:var(--card);border-left:2px solid var(--border2)}
 .form-tbl tr:last-child td{border-bottom:none}
-.form-tbl tr:hover td{background:var(--card2)}
+.form-tbl tr:hover td,.form-tbl tr:hover td:first-child,.form-tbl tr:hover td.form-sum,.form-tbl tr:hover td.form-trend{background:#101525}
 .score-pill{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:22px;border-radius:4px;font-size:10px;font-weight:700;padding:0 4px}
 .score-pill.pos{background:#042010;border:1px solid #0d3a1a;color:var(--green)}
 .score-pill.neg{background:#160404;border:1px solid #360b0b;color:var(--red)}
@@ -296,7 +304,7 @@ select:focus{border-color:var(--wc-gold)}
   <div class="kpi-row" id="kpis"></div>
 
   <!-- Leaderboard + Chart tabs -->
-  <div class="two">
+  <div class="two-24">
     <div class="card" style="padding:14px">
       <div class="sec" style="margin-bottom:10px">🏆 Standings</div>
       <div class="lb" id="lb"></div>
@@ -351,7 +359,7 @@ select:focus{border-color:var(--wc-gold)}
   <!-- Recent form table -->
   <div class="card" style="margin-bottom:20px;padding:14px">
     <div class="sec" style="margin-bottom:10px">🔥 Recent form (last 5 matches)</div>
-    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch" id="formTable"></div>
+    <div class="form-wrap" id="formTable"></div>
   </div>
 
   <!-- Fun stats -->
@@ -447,6 +455,23 @@ function detectRound(label) {
   if (l.includes('r32') || l.includes('round of 32'))      return 'R32';
   if (l.includes('group'))                                  return 'Group';
   return '';
+}
+
+function shortLabel(label) {
+  // Already short (≤8 chars) — use as-is
+  if (label.length <= 8) return label;
+  // Common patterns: "R32-M1 : Brazil vs Japan" → "R32-M1"
+  const colonPart = label.split(':')[0].trim();
+  if (colonPart.length <= 8) return colonPart;
+  // Extract round+number pattern: "R-32 Match 1" → "R32-M1"
+  const m = label.match(/[Rr][-]?(\d+)[^\d]*[Mm](?:atch\s*)?(\d+)/);
+  if (m) return `R${m[1]}-M${m[2]}`;
+  // QF/SF/Final patterns
+  if (/quarter/i.test(label)) { const n=label.match(/\d+/); return 'QF'+(n?n[0]:''); }
+  if (/semi/i.test(label))    { const n=label.match(/\d+/); return 'SF'+(n?n[0]:''); }
+  if (/final/i.test(label))   return 'Final';
+  // Fallback: first 8 chars
+  return label.slice(0,8);
 }
 
 function splitCSV(line) {
@@ -546,7 +571,7 @@ function renderLB() {
         <div class="pdet">
           <span style="color:var(--green)">▲${pl.positive}</span>
           <span style="color:var(--red)">▼${pl.negative}</span>
-          <span style="color:var(--faint)">⬛${pl.zero}</span>
+          <span style="color:#5a6aaa">■${pl.zero}</span>
           ${pl.initial ? `<span style="color:var(--amber)">+${pl.initial} base</span>` : ''}
         </div>
         <div class="form-dots">${formDots}</div>
@@ -663,16 +688,21 @@ function drawProg() {
   const validIdx = S.matches.map((_,i)=>i).filter(i => S.players.some(p => p.matchPts[i] !== null));
   if (!validIdx.length) return;
 
-  const labels   = validIdx.map(i => S.matches[i].label);
+  // Start from 0, then Group Stage point, then match-by-match
+  const hasInitial = S.players.some(p => p.initial > 0);
+  const progLabels = ['Start', ...(hasInitial ? ['⭐ Group Stage'] : []), ...validIdx.map(i => shortLabel(S.matches[i].label))];
   const datasets = S.players.map((p, i) => {
+    const pts = [0];
+    if (hasInitial) pts.push(p.initial);
     let cum = p.initial;
-    const data = validIdx.map(mi => { cum += (p.matchPts[mi] ?? 0); return cum; });
-    return { label:p.name, data, borderColor:SERIES[i%10], backgroundColor:'transparent',
+    validIdx.forEach(mi => { cum += (p.matchPts[mi] ?? 0); pts.push(cum); });
+    return { label:p.name, data:pts, borderColor:SERIES[i%10], backgroundColor:'transparent',
              borderWidth:2, pointRadius:3, pointBackgroundColor:SERIES[i%10], tension:.35 };
   });
+  const labels = progLabels;
 
   C.prog = new Chart(document.getElementById('cProg').getContext('2d'),
-    { type:'line', data:{ labels, datasets }, options:baseOpts(true) });
+    { type:'line', data:{ labels:progLabels, datasets }, options:baseOpts(true) });
 }
 
 // ACCURACY — positive vs negative matches per player
@@ -682,7 +712,7 @@ function drawAcc() {
   C.acc = new Chart(document.getElementById('cAcc').getContext('2d'), {
     type: 'bar',
     data: {
-      labels: S.players.map(p => p.name),
+      labels: S.players.map(p => p.name.split(' ')[0]),
       datasets: [
         { label:'Positive (+ve)', data:S.players.map(p=>p.positive), backgroundColor:S.players.map((_,i)=>SERIES[i%10]+'cc'), borderRadius:3 },
         { label:'Negative (-ve)', data:S.players.map(p=>p.negative), backgroundColor:'#3a1010', borderRadius:3 },
@@ -806,7 +836,7 @@ function drawH2H() {
 
   // Only show matches where at least one has data
   const validIdx = S.matches.map((_,i)=>i).filter(i => a.matchPts[i]!==null || b.matchPts[i]!==null);
-  const labels   = validIdx.map(i => S.matches[i].label);
+  const labels   = validIdx.map(i => shortLabel(S.matches[i].label));
 
   C.h2h = new Chart(document.getElementById('cH2H').getContext('2d'), {
     type: 'bar',
@@ -843,7 +873,7 @@ function renderFormTable() {
   const last5    = validIdx.slice(-5);
   if (!last5.length) { document.getElementById('formTable').innerHTML='<p style="color:var(--muted);font-size:12px">No match data yet.</p>'; return; }
 
-  const labels = last5.map(i => S.matches[i].label);
+  const labels = last5.map(i => shortLabel(S.matches[i].label));
 
   // Sort by last-5 sum descending
   const sorted = [...p].sort((a,b) => {
@@ -861,8 +891,8 @@ function renderFormTable() {
     <thead><tr>
       <th>Player</th>
       ${labels.map(l=>`<th>${l}</th>`).join('')}
-      <th>L5 Sum</th>
-      <th>Trend</th>
+      <th class="form-sum">L5 Sum</th>
+      <th class="form-trend">Trend</th>
     </tr></thead><tbody>`;
 
   sorted.forEach(pl => {
@@ -871,13 +901,13 @@ function renderFormTable() {
     // Trend: compare first half vs second half of last 5
     const first  = last5.slice(0, Math.floor(last5.length/2)).reduce((acc,i)=>acc+(pl.matchPts[i]??0),0);
     const second = last5.slice(Math.floor(last5.length/2)).reduce((acc,i)=>acc+(pl.matchPts[i]??0),0);
-    const trend  = second>first?'↑ Up':second<first?'↓ Down':'→ Same';
+    const trend  = second>first?'↑ Hot':second<first?'↓ Cold':'→ Same';
     const tCol   = second>first?'var(--green)':second<first?'var(--red)':'var(--muted)';
     html += `<tr>
       <td>${pl.name}</td>
       ${last5.map(i => `<td>${pill(pl.matchPts[i])}</td>`).join('')}
-      <td style="font-weight:700;color:${sumCol}">${sum>0?'+':''}${sum}</td>
-      <td style="color:${tCol};font-size:11px;font-weight:600">${trend}</td>
+      <td class="form-sum" style="font-weight:700;color:${sumCol}">${sum>0?'+':''}${sum}</td>
+      <td class="form-trend" style="color:${tCol};font-size:11px;font-weight:600">${trend}</td>
     </tr>`;
   });
 
@@ -954,14 +984,14 @@ function renderFun() {
 
   const cards = [
     { icon:'🏆', lbl:'Overall leader',          val:p[0].name,                         sub:p[0].total+'pts total' },
-    bestMeta.length  ? { icon:'⚡', lbl:'Best single match',     val:bestMeta.map(e=>e.name).join(' & '),  sub:`+${bestPts}pts — ${bestMeta[0].match}` } : null,
+    /* best single match removed */
     mosPos.players.length ? { icon:'🎯', lbl:'Most positive matches', val:names(mosPos.players),           sub:`${mosPos.val} positive result${mosPos.val!==1?'s':''}` } : null,
-    topEarner.players.length ? { icon:'📈', lbl:'Top match earner',   val:names(topEarner.players),        sub:`${topEarner.val}pts earned in matches` } : null,
+    /* top match earner removed */
     longestPlayers.length&&longestStreak>0 ? { icon:'🔥', lbl:'Longest positive streak', val:longestPlayers.join(' & '), sub:`${longestStreak} in a row` } : null,
     hotPlayers.length&&hotLen>0 ? { icon:'🌶️', lbl:'On fire right now',   val:hotPlayers.join(' & '),      sub:`${hotLen} consecutive positive` } : null,
     mosNeg.players.length ? { icon:'😬', lbl:'Most negative matches', val:names(mosNeg.players),           sub:`${mosNeg.val} negative result${mosNeg.val!==1?'s':''}` } : null,
-    mosActive.players.length ? { icon:'🗳️', lbl:'Most active voter',   val:names(mosActive.players),       sub:`${mosActive.val} matches voted` } : null,
-    worstMeta.length ? { icon:'💀', lbl:'Worst single match',    val:worstMeta.map(e=>e.name).join(' & '), sub:`${worstPts}pts — ${worstMeta[0].match}` } : null,
+    /* most active voter removed */
+    /* worst single match removed */
     p.length>1 ? { icon:'⚔️', lbl:'Closest rivals',
       val:`${p[p.length-2].name} vs ${p[p.length-1].name}`,
       sub:`${Math.abs(p[p.length-2].total-p[p.length-1].total)}pt gap` } : null,
