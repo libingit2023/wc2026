@@ -229,46 +229,23 @@ select:focus{border-color:var(--wc-gold)}
 #err-banner{display:none;background:var(--red-bg);border:1px solid var(--red-border);color:var(--red);padding:10px 16px;border-radius:8px;font-size:12px;margin-bottom:16px}
 
 /* ── MOBILE ──────────────────────────────────────────────────── */
-@media(max-width:800px){
-  /* Radar+H2H and other .two stacks single col — give charts more room */
-  .two .cw canvas{ min-height:220px }
-}
 @media(max-width:600px){
-  header{padding:8px 10px;gap:6px}
-  .wc-logo{width:34px;height:34px}
-  .logo-text .l2{font-size:15px}
+  header{padding:8px 12px;gap:8px}
+  .wc-logo{width:38px;height:38px}
+  .logo-text .l2{font-size:16px}
   .logo-text .l3{display:none}
-  .logo-text .l1{display:none}
-  main{padding:10px 8px}
-  .card{padding:10px}
-  .kpi-row{grid-template-columns:repeat(3,1fr);gap:7px}
-  .kpi{padding:10px 8px}
-  .kpi .v{font-size:18px}
-  .kpi .l{font-size:8px}
-  .tbl-scroll{max-height:260px}
-  .form-wrap{max-height:240px}
-  .btn.ghost{font-size:10px;padding:4px 8px}
-  .hright{gap:4px}
-  .two{gap:10px}
-  .ptot{font-size:14px}
-  .lbr{padding:7px 7px;gap:7px}
-  .av{width:28px;height:28px;font-size:10px}
-  .pname{font-size:12px}
-  .pdet{font-size:9px;gap:3px}
-  .rnk{width:20px;font-size:12px}
-  .three{grid-template-columns:repeat(2,1fr);gap:8px}
-  .fun-card{padding:10px}
-  select{font-size:11px;padding:5px 8px}
-  .tab{padding:6px 9px;font-size:10px}
-  .hstat{padding:5px 8px}
-  .hstat .hv{font-size:12px}
+  main{padding:12px 10px}
+  .card{padding:12px}
+  .kpi .v{font-size:20px}
+  .tbl-scroll{max-height:300px}
+  .btn.ghost{font-size:10px;padding:5px 9px}
+  .two{gap:12px}
+  .ptot{font-size:15px}
 }
 @media(max-width:380px){
+  .logo-text .l1{display:none}
   .refresh-note{display:none}
-  .hright{gap:3px}
-  .kpi-row{grid-template-columns:repeat(2,1fr)}
-  .three{grid-template-columns:repeat(2,1fr)}
-  .logo-text .l2{font-size:14px}
+  .hright{gap:5px}
 }
 </style>
 </head>
@@ -325,21 +302,11 @@ select:focus{border-color:var(--wc-gold)}
   <!-- KPIs -->
   <div class="kpi-row" id="kpis"></div>
 
-  <!-- Leaderboard + Chart tabs -->
-  <div class="two-24">
-    <div class="card" style="padding:14px">
+  <!-- Leaderboard -->
+  <div>
+  <div class="card" style="padding:14px;margin-bottom:20px">
       <div class="sec" style="margin-bottom:10px">🏆 Standings</div>
       <div class="lb" id="lb"></div>
-    </div>
-    <div class="card" style="padding:14px">
-      <div class="tabbar">
-<div class="tab on"  onclick="showTab('acc',this)">🎯 Accuracy</div>
-        <div class="tab"     onclick="showTab('share',this)">🥧 Share</div>
-        <div class="tab"     onclick="showTab('podium',this)">🏅 Podium</div>
-      </div>
-<div class="tp on" id="tp-acc"><div class="cw" style="height:260px"><canvas id="cAcc"></canvas></div></div>
-      <div class="tp"    id="tp-share"><div class="cw" style="height:260px"><canvas id="cShare"></canvas></div></div>
-      <div class="tp"    id="tp-podium" style="height:260px"><div id="podiumVis"></div></div>
     </div>
   </div>
 
@@ -520,9 +487,6 @@ function render() {
   renderRoundFilter();
   renderMatchTable();
   populateSelects();
-  drawAcc();
-  drawShare();
-  renderPodium();
   drawRadar();
   drawH2H();
   renderFormTable();
@@ -724,102 +688,9 @@ function drawProg() {
     { type:'line', data:{ labels:progLabels, datasets }, options:baseOpts(true) });
 }
 
-// ACCURACY — positive vs negative matches per player
-function drawAcc() {
-  kill('acc');
-  if (!S.players.length) return;
-  // Dynamic height: taller when many players so all names show
-  const n = S.players.length;
-  const chartH = Math.max(260, n * 18);
-  document.querySelector('#tp-acc .cw').style.height = chartH + 'px';
 
-  const opts = baseOpts(true);
-  // Always show all labels, rotate enough to avoid overlap
-  opts.scales.x.ticks = {
-    color: TC,
-    font: { size: Math.max(8, Math.min(11, Math.floor(280 / n))) },
-    maxRotation: 45,
-    minRotation: 30,
-    autoSkip: false,   // never skip any label
-  };
-  opts.scales.x.grid = { color: GR };
 
-  C.acc = new Chart(document.getElementById('cAcc').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: S.players.map(p => p.name),
-      datasets: [
-        { label:'Positive (+ve)', data:S.players.map(p=>p.positive), backgroundColor:S.players.map((_,i)=>SERIES[i%10]+'cc'), borderRadius:3 },
-        { label:'Negative (-ve)', data:S.players.map(p=>p.negative), backgroundColor:'#3a1010', borderRadius:3 },
-      ]
-    },
-    options: opts
-  });
-}
 
-// SHARE — points distribution doughnut
-function drawShare() {
-  kill('share');
-  if (!S.players.length) return;
-  const vals  = S.players.map(p => Math.max(0, p.total));
-  const total = vals.reduce((a,b)=>a+b,0) || 1;
-  C.share = new Chart(document.getElementById('cShare').getContext('2d'), {
-    type: 'doughnut',
-    data: { labels:S.players.map(p=>p.name), datasets:[{
-      data: vals, backgroundColor:S.players.map((_,i)=>SERIES[i%10]),
-      borderColor:'#0d1120', borderWidth:3, hoverOffset:6
-    }]},
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{ display:true, position:'bottom', labels:{color:TC,font:{size:10},boxWidth:10,padding:8} },
-        tooltip:{ backgroundColor:'#0d1120',borderColor:'#263055',borderWidth:1,
-          titleColor:'#eef0f8',bodyColor:'#6a7a9e',
-          callbacks:{ label:c => ` ${c.label}: ${c.parsed}pts (${Math.round(c.parsed/total*100)}%)` }
-        }
-      }
-    }
-  });
-}
-
-// PODIUM
-function renderPodium() {
-  const el = document.getElementById('podiumVis');
-  if (!S.players.length) { el.innerHTML=''; return; }
-  const top3 = S.players.slice(0, Math.min(3, S.players.length));
-  const orderMap = top3.length >= 3 ? [1, 0, 2] : top3.length === 2 ? [1, 0] : [0];
-  const orderPlayers = orderMap.map(i => top3[i]);
-  const heights = [70, 100, 50];
-  const colors  = ['#C0C0C0','#F5C842','#CD7F32'];
-  const medals  = ['🥈','🥇','🥉'];
-
-  el.style.cssText = 'display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:10px 8px 0;height:240px';
-  el.innerHTML = orderPlayers.map((pl, vi) => {
-    const ri      = top3.indexOf(pl);
-    const h       = vi===1 ? 100 : vi===0 ? 70 : 50;
-    const c       = colors[ri];
-    const initials= pl.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;max-width:100px">
-      <div style="font-size:20px">${medals[ri]||''}</div>
-      <div style="width:38px;height:38px;border-radius:50%;background:${AV_BG[ri%10]};color:${AV_FG[ri%10]};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:2px solid ${c};flex-shrink:0">${initials}</div>
-      <div style="font-size:10px;color:#fff;font-weight:700;text-align:center;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px">${pl.name.split(' ')[0]}</div>
-      <div style="font-size:12px;font-weight:900;color:${c}">${pl.total}pts</div>
-      <div style="width:100%;flex:1;max-height:${h}px;background:linear-gradient(180deg,${c}33,${c}11);border:1px solid ${c}44;border-bottom:none;border-radius:5px 5px 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:6px">
-        <span style="font-size:12px;font-weight:900;color:${c}44">${ri+1}</span>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function showTab(name, el) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  document.querySelectorAll('.tp').forEach(tp => tp.classList.remove('on'));
-  el.classList.add('on');
-  document.getElementById('tp-'+name).classList.add('on');
-  if (name==='acc')    drawAcc();
-  if (name==='share')  drawShare();
-  if (name==='podium') renderPodium();
-}
 
 // RADAR
 function drawRadar() {
