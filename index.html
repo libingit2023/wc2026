@@ -225,50 +225,110 @@ function fetchSheet() {
     });
 }
 
+/**
+ * Parses the uploaded CSV and builds the tournament data model.
+ *
+ * Expected CSV format:
+ * ---------------------------------------------------------------
+ * Name | Initial Points | Match 1 | Match 2 | Match 3 | ...
+ * ---------------------------------------------------------------
+ *
+ * - Column 1 : Player Name
+ * - Column 2 : Initial/Group Stage Points
+ * - Column 3 onwards : Match points
+ *
+ * Blank match cells are treated as "not played".
+ * Blank match headers are automatically named "Match X".
+ */
 function parseCSV(csv) {
-  const lines = csv.trim().split(/\r?\n/).filter(l => l.trim());
+
+  const lines = csv
+    .trim()
+    .split(/\r?\n/)
+    .filter(line => line.trim());
+
   if (lines.length < 2) return;
+
+  // Read header row
   const headers = splitCSV(lines[0]);
 
-  // Col 0 = Name, Col 1 = Group Stage Mark (or initial pts)
-  // Col 2+ = match columns (some may be blank headers — auto-name them)
-  const matchCols = headers.slice(2).map((h, i) => {
-    const label = h.trim();
+  // Build match metadata from column 3 onwards
+  const matchCols = headers.slice(2).map((header, index) => {
+
+    const label = header.trim();
+
     return {
-      idx: i + 2,
-      // If header is blank or just spaces, name it by position
-      label: label || ('Match ' + (i + 1)),
-      // Detect round from label for display grouping
-      round: detectRound(label || '')
+      idx: index + 2,
+      label: label || ('Match ' + (index + 1)),
+      round: detectRound(label)
     };
+
   });
 
   S.matches = matchCols;
   S.players = [];
 
+  // Process each player row
   for (let r = 1; r < lines.length; r++) {
+
     const row = splitCSV(lines[r]);
+
     const name = (row[0] || '').trim();
     if (!name) continue;
 
-    const initial = parseFloat((row[1] || '').replace(/[^0-9.\-]/g,'')) || 0;
-    const matchPts = matchCols.map(m => {
-      const raw = (row[m.idx] || '').trim();
-      if (raw === '' || raw === '-' || raw === '–') return null;
-      const n = parseFloat(raw);
-      return isNaN(n) ? null : n;
+    // Read Initial / Group Stage Points (Column 2)
+    const initialRaw = (row[1] || '').trim();
+
+    const initial = Number(
+      initialRaw
+        .replace(/,/g, '')
+        .replace(/[^0-9.-]/g, '')
+    ) || 0;
+
+    // Read all match scores
+    const matchPts = matchCols.map(match => {
+
+      const raw = (row[match.idx] || '').trim();
+
+      if (raw === '' || raw === '-' || raw === '–') {
+        return null;
+      }
+
+      const value = Number(raw);
+
+      return isNaN(value) ? null : value;
+
     });
 
-    const earned   = matchPts.reduce((s, v) => s + (v !== null ? v : 0), 0);
-    const played   = matchPts.filter(v => v !== null).length;
-    const correct  = matchPts.filter(v => v !== null && v > 0).length;
-    const wrong    = matchPts.filter(v => v !== null && v < 0).length;
-    const zero     = matchPts.filter(v => v === 0).length;
+    // Statistics
+    const earned = matchPts.reduce(
+      (sum, value) => sum + (value !== null ? value : 0),
+      0
+    );
 
-    S.players.push({ name, initial, matchPts, earned, total: initial + earned, played, correct, wrong, zero });
+    const played = matchPts.filter(v => v !== null).length;
+    const correct = matchPts.filter(v => v !== null && v > 0).length;
+    const wrong = matchPts.filter(v => v !== null && v < 0).length;
+    const zero = matchPts.filter(v => v === 0).length;
+
+    // Add player
+    S.players.push({
+      name,
+      initial,
+      matchPts,
+      earned,
+      total: initial + earned,
+      played,
+      correct,
+      wrong,
+      zero
+    });
+
   }
 
+  // Sort leaderboard by total points
   S.players.sort((a, b) => b.total - a.total);
+
 }
 
 function detectRound(label) {
